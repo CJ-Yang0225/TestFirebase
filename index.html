@@ -78,6 +78,7 @@
         document.querySelector("tbody").innerHTML = "";
 
         balanceTable.forEach(balance => {
+            if (!balance) return;
             document.querySelector("tbody").innerHTML += (
                 `<tr>
                     <td>${balance.name}</td>
