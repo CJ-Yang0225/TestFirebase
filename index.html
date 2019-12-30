@@ -121,6 +121,7 @@
         userPasswordInput = document.getElementById("user-password"),
         userInfoInputBox = document.getElementById("user-info-input-box");
 
+    // 當登入狀態變更
     firebase.auth().onAuthStateChanged(user => {
         if (user) {
             logged = true;
@@ -132,12 +133,14 @@
 
     var userEmail;
 
+    // Enter快捷
     for (let input of [userEmailInput, userPasswordInput]) {
         input.addEventListener("keypress", function (event) {
             if (event.which == 13) userInfoSend.click();
         });
     }
 
+    // 登出
     signOut.addEventListener("click", function () {
         firebase.auth().signOut();
         signOut.style.display = "none";
@@ -146,6 +149,7 @@
 
     signIn.addEventListener("click", loginFeature);
 
+    // 登入
     userInfoSend.addEventListener("click", async function () {
         userEmail = userEmailInput.value;
         var userPassword = userPasswordInput.value;
