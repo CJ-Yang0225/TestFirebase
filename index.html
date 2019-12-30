@@ -19,18 +19,80 @@
                 <th>支出</th>
                 <th>操作
                     <button class="btn btn-primary" onclick="create()">新增</button>
+                    <button id="signin" class="btn btn-success">登入</button>
+                    <button id="signout" class="btn btn-success" style="display: none;">登出</button>
                 </th>
             </tr>
         </thead>
         <tbody>
         </tbody>
     </table>
+    <style>
+        #user-info-input-box {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.5);
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0px;
+            left: 0px;
+            z-index: 5;
+        }
+
+        #user-info-input-container {
+            display: flex;
+            align-content: space-between;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+            flex-direction: row;
+            box-sizing: border-box;
+            width: 500px;
+            max-width: 90%;
+            height: calc(14px * 4 + 32px * 3);
+            padding: 14px;
+        }
+
+        #user-email,
+        #user-password {
+            box-sizing: border-box;
+            font-size: 16px;
+            line-height: 16px;
+            background: #ddd;
+            width: 100%;
+            height: 32px;
+            padding: 8px;
+            border: 0px;
+            border-radius: 2px;
+        }
+
+        #user-info-send {
+            box-sizing: border-box;
+            font-size: 16px;
+            line-height: 32px;
+            background: #ddd;
+            width: 64px;
+            height: 32px;
+            padding: 0px;
+            border: 0px;
+            border-radius: 2px;
+        }
+    </style>
+    <div id="user-info-input-box" style="display: none;">
+        <div id="user-info-input-container">
+            <input type="text" id="user-email" placeholder="輸入Email" />
+            <input type="password" id="user-password" placeholder="輸入密碼" />
+            <input type="button" id="user-info-send" value="完成" />
+        </div>
+    </div>
 </body>
 <!-- The core Firebase JS SDK is always required and must be listed first -->
 <script src="https://www.gstatic.com/firebasejs/7.5.2/firebase-app.js"></script>
 
 <!-- TODO: Add SDKs for Firebase products that you want to use
      https://firebase.google.com/docs/web/setup#available-libraries -->
+<script src="https://www.gstatic.com/firebasejs/7.5.2/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/7.5.2/firebase-database.js"></script>
 
 <script>
@@ -49,7 +111,74 @@
     firebase.initializeApp(firebaseConfig);
 </script>
 <script>
-	// 當資料有變更，刷新頁面顯示
+    var logged = false;
+
+    var signIn = document.getElementById("signin");
+    var signOut = document.getElementById("signout");
+
+    var userInfoSend = document.getElementById("user-info-send"),
+        userEmailInput = document.getElementById("user-email"),
+        userPasswordInput = document.getElementById("user-password"),
+        userInfoInputBox = document.getElementById("user-info-input-box");
+
+    firebase.auth().onAuthStateChanged(user => {
+        if (user) {
+            logged = true;
+            signOut.style.display = "";
+            signIn.style.display = "none";
+            userEmail = user.email;
+        }
+    });
+
+    var userEmail;
+
+    for (let input of [userEmailInput, userPasswordInput]) {
+        input.addEventListener("keypress", function (event) {
+            if (event.which == 13) userInfoSend.click();
+        });
+    }
+
+    signOut.addEventListener("click", function () {
+        firebase.auth().signOut();
+        signOut.style.display = "none";
+        signIn.style.display = "";
+    });
+
+    signIn.addEventListener("click", loginFeature);
+
+    userInfoSend.addEventListener("click", async function () {
+        userEmail = userEmailInput.value;
+        var userPassword = userPasswordInput.value;
+
+        if (userEmail && userPassword) {
+            try {
+                await firebase.auth().signInWithEmailAndPassword(userEmail, userPassword);
+                logged = true;
+                signIn.style.display = "none";
+                signOut.style.display = "";
+                userInfoInputBox.style.display = "none";
+            } catch (e) {
+                if (e.code === "auth/wrong-password") return alert("密碼錯誤");
+
+                try {
+                    await firebase.auth().createUserWithEmailAndPassword(userEmail, userPassword);
+                } catch (e) {
+                    if (e.code === "auth/weak-password") return alert("密碼長度不足");
+                }
+            }
+        } else {
+            userEmail = void 0;
+            signIn.style.display = "";
+            signOut.style.display = "none";
+            userInfoInputBox.style.display = "none";
+        }
+    });
+
+    function loginFeature() {
+        userInfoInputBox.style.display = "";
+    }
+
+    // 當資料有變更，刷新頁面顯示
     firebase.database().ref("/balance").on("value", response => {
         var balanceTable = Array.from(response.val()) || [];
 
@@ -71,8 +200,10 @@
         });
     });
 
-	// 修改內容
+    // 修改內容
     function modify(id, name, debit, credit) {
+        if (!logged) return loginFeature();
+
         var name = prompt("名稱", name);
         if (!name) return alert("已取消更新");
 
@@ -84,18 +215,20 @@
 
         firebase.database().ref("/balance/" + id).update({
             id, name, debit, credit
-        });         
+        });
     }
 
-	// 資料刪除
+    // 資料刪除
     function remove(id) {
+        if (!logged) return loginFeature();
         if (!confirm("確認刪除?")) return;
-        
+
         firebase.database().ref("/balance/" + id).remove();
     }
 
-	// 資料新增
+    // 資料新增
     function create() {
+        if (!logged) return loginFeature();
         var name = prompt("名稱");
         if (!name) return alert("已取消新增");
 
