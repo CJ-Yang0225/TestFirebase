@@ -149,6 +149,7 @@
             signOut.style.display = "";
             signIn.style.display = "none";
             userEmail = user.email;
+            refresh();
         }
     });
 
@@ -166,6 +167,8 @@
         firebase.auth().signOut();
         signOut.style.display = "none";
         signIn.style.display = "";
+        logged = false;
+        document.querySelector("tbody").innerHTML = "";
     });
 
     signIn.addEventListener("click", loginFeature);
@@ -182,17 +185,24 @@
                 signIn.style.display = "none";
                 signOut.style.display = "";
                 userInfoInputBox.style.display = "none";
+                refresh();
             } catch (e) {
                 if (e.code === "auth/wrong-password") return alert("密碼錯誤");
 
                 try {
                     await firebase.auth().createUserWithEmailAndPassword(userEmail, userPassword);
+                    logged = true;
+                    signIn.style.display = "none";
+                    signOut.style.display = "";
+                    userInfoInputBox.style.display = "none";
+                    refresh();
                 } catch (e) {
                     if (e.code === "auth/weak-password") return alert("密碼長度不足");
                 }
             }
         } else {
             userEmail = void 0;
+            logged = false;
             signIn.style.display = "";
             signOut.style.display = "none";
             userInfoInputBox.style.display = "none";
@@ -203,16 +213,17 @@
         userInfoInputBox.style.display = "";
     }
 
-    // 當資料有變更，刷新頁面顯示
-    firebase.database().ref("/balance").on("value", response => {
-        var balanceTable = Array.from(response.val()) || [];
+    function refresh() {
+        // 當資料有變更，刷新頁面顯示
+        firebase.database().ref("/balance").on("value", response => {
+            var balanceTable = Array.from(response.val()) || [];
 
-        document.querySelector("tbody").innerHTML = "";
+            document.querySelector("tbody").innerHTML = "";
 
-        balanceTable.forEach(balance => {
-            if (!balance) return;
-            document.querySelector("tbody").innerHTML += (
-                `<tr>
+            balanceTable.forEach(balance => {
+                if (!balance) return;
+                document.querySelector("tbody").innerHTML += (
+                    `<tr>
                     <td>${balance.name}</td>
                     <td>${balance.debit}</td>
                     <td>${balance.credit}</td>
@@ -221,9 +232,10 @@
                         <button class="btn btn-danger" onclick="remove(${balance.id})">刪除</button>
                     </td>
                 </tr>`
-            );
+                );
+            });
         });
-    });
+    }
 
     // 修改內容
     function modify(id, name, debit, credit) {
