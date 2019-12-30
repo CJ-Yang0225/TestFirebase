@@ -49,29 +49,7 @@
     firebase.initializeApp(firebaseConfig);
 </script>
 <script>
-    // function search() {
-    //     document.querySelector("tbody").innerHTML = "";
-    //     var xhr = new XMLHttpRequest();
-    //     xhr.open("GET", "./api/search.php");
-    //     xhr.onload = function () {
-    //         var balanceTable = JSON.parse(xhr.responseText);
-    //         balanceTable.forEach(balance => {
-    //             document.querySelector("tbody").innerHTML += (
-    //                 `<tr>
-    //                     <td>${balance.self_name}</td>
-    //                     <td>${balance.self_debit}</td>
-    //                     <td>${balance.self_credit}</td>
-    //                     <td>
-    //                         <button class="btn btn-warning" onclick="modify(${balance.self_id}, '${balance.self_name}', '${balance.self_debit}', '${balance.self_credit}')">編輯</button>
-    //                         <button class="btn btn-danger" onclick="remove(${balance.self_id})">刪除</button>
-    //                     </td>
-    //                 </tr>`
-    //             );
-    //         });
-    //     };
-    //     xhr.send();
-    // }
-
+	// 當資料有變更，刷新頁面顯示
     firebase.database().ref("/balance").on("value", response => {
         var balanceTable = Array.from(response.val()) || [];
 
@@ -93,6 +71,7 @@
         });
     });
 
+	// 修改內容
     function modify(id, name, debit, credit) {
         var name = prompt("名稱", name);
         if (!name) return alert("已取消更新");
@@ -105,36 +84,17 @@
 
         firebase.database().ref("/balance/" + id).update({
             id, name, debit, credit
-        });
-
-        // var xhr = new XMLHttpRequest();
-        // var formData = new FormData();
-
-        // formData.append("id", id);
-        // formData.append("name", name);
-        // formData.append("debit", debit);
-        // formData.append("credit", credit);
-
-        // xhr.open("POST", "./api/update.php");
-        // xhr.onload = function() {
-        //     if (xhr.responseText == 0) alert("更新失敗!");
-        //     search();
-        // };
-        // xhr.send(formData);            
+        });         
     }
 
+	// 資料刪除
     function remove(id) {
         if (!confirm("確認刪除?")) return;
-        // var xhr = new XMLHttpRequest();
-        // xhr.open("GET", "./api/delete.php?id=" + id);
-        // xhr.onload = function () {
-        //     if (xhr.responseText == 0) alert("刪除失敗!");
-        //     search();
-        // };
-        // xhr.send();
+        
         firebase.database().ref("/balance/" + id).remove();
     }
 
+	// 資料新增
     function create() {
         var name = prompt("名稱");
         if (!name) return alert("已取消新增");
@@ -153,22 +113,7 @@
                 id, name, debit, credit
             });
         });
-
-        // var formData = new FormData();
-        // formData.append("name", name);
-        // formData.append("debit", debit);
-        // formData.append("credit", credit);
-
-        // var xhr = new XMLHttpRequest();
-        // xhr.open("POST", "./api/insert.php");
-        // xhr.onload = function () {
-        //     if (xhr.responseText == 0) alert("新增失敗!");
-        //     search();
-        // };
-        // xhr.send(formData);
     }
-
-    // search();
 </script>
 
 </html>
